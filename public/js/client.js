@@ -25,8 +25,22 @@
       .replace(/'/g, '&#39;');
   }
 
+  function invitedRoomCode() {
+    const params = new URLSearchParams(location.search);
+    return String(params.get('code') || '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '')
+      .slice(0, 4);
+  }
+
+  function inviteUrl(code) {
+    const url = new URL(location.href);
+    url.searchParams.set('code', code);
+    return url.toString();
+  }
+
   function smsInviteHref(code) {
-    const message = `Join my Imposter Who? room. Room code: ${code}. Open ${location.href}`;
+    const message = `Join my Imposter Who? room. Room code: ${code}. Open ${inviteUrl(code)}`;
     return `sms:?&body=${encodeURIComponent(message)}`;
   }
 
@@ -135,6 +149,7 @@
 
   function renderHome(view) {
     const games = view.games || [];
+    const invitedCode = invitedRoomCode();
     const gameOptions = games
       .map(
         (g) =>
@@ -173,7 +188,7 @@
               <span>Room code</span>
               <input name="code" maxlength="4" autocomplete="off" required
                      style="text-transform:uppercase; letter-spacing:.4em; text-align:center; font-weight:700;"
-                     placeholder="ABCD" />
+                     placeholder="ABCD" value="${esc(invitedCode)}" />
             </label>
             <button type="submit" class="primary big">Join</button>
           </form>
@@ -261,7 +276,7 @@
           <p class="room-code">${esc(view.code)}</p>
           <p class="muted small">Players join from their own device with this code.</p>
           <a class="primary big sms-invite" href="${esc(smsHref)}">SMS ping invite</a>
-          <p class="muted small invite-copy">Sends this room code and the current URL.</p>
+          <p class="muted small invite-copy">Sends this room code and an invite URL that pre-fills the join form.</p>
         </section>
         <section class="card">
           <h3>Players (${view.players.length}/${view.game.maxPlayers})</h3>
