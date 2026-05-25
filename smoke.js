@@ -99,9 +99,10 @@ async function main() {
   send(c, { type: 'action', actionId: 'ready' });
   await waitFor(a, (v) => v.phaseId === 'clues', 'advanced to clues');
 
-  console.log('\n— Players give clues in order —');
-  // Walk turn order: each round, find the player whose turn it is and submit
-  for (let i = 0; i < 3; i++) {
+  console.log('\n— Players give clues across configured rounds —');
+  // Walk turn order for all configured clue rounds: each turn, find the client whose turn it is and submit.
+  const clueTurns = 3 * 2; // default is 2 rounds for 3 simulated players
+  for (let i = 0; i < clueTurns; i++) {
     // Find which client is currently being asked for a clue
     const all = [a, b, c];
     let actor = null;

@@ -48,6 +48,14 @@ const Imposter = {
       min: 1,
       max: 3,
     },
+    {
+      key: 'rounds',
+      label: 'Clue rounds before vote',
+      type: 'number',
+      default: 2,
+      min: 1,
+      max: 3,
+    },
   ],
 
   setup(ctx) {
@@ -66,6 +74,7 @@ const Imposter = {
       Math.max(1, parseInt(ctx.config.imposters, 10) || 1),
       Math.max(1, ctx.players.length - 2)
     );
+    const rounds = Math.min(Math.max(1, parseInt(ctx.config.rounds, 10) || 2), 3);
     const shuffled = ctx.shuffle(ctx.players);
     const imposterIds = shuffled.slice(0, numImposters).map((p) => p.id);
     const order = ctx.shuffle(ctx.players).map((p) => p.id);
@@ -75,6 +84,8 @@ const Imposter = {
       category: pick.category,
       imposterIds,
       order,
+      rounds,
+      currentRound: 1,
       readyFor: [],
       currentClueGiver: 0,
       clues: [],
@@ -142,7 +153,8 @@ const Imposter = {
       getView(ctx) {
         const { state, me, players } = ctx;
         const idx = state.currentClueGiver;
-        const allDone = idx >= state.order.length;
+        const totalRounds = state.rounds || 1;
+        const allDone = state.currentRound >= totalRounds && idx >= state.order.length;
 
         const cluesItems = state.clues.map((c) => {
           const p = players.find((x) => x.id === c.playerId);
@@ -168,11 +180,13 @@ const Imposter = {
         const currentId = state.order[idx];
         const isMe = currentId === me.id;
         const currentName = (players.find((p) => p.id === currentId) || {}).name || '?';
+        const clueNumber = (state.currentRound - 1) * state.order.length + idx + 1;
+        const totalClues = totalRounds * state.order.length;
 
         const sections = [
           {
             type: 'header',
-            text: `Clue ${idx + 1} of ${state.order.length}`,
+            text: `Round ${state.currentRound} of ${totalRounds} · Clue ${clueNumber} of ${totalClues}`,
           },
         ];
         if (isMe) {
@@ -209,8 +223,12 @@ const Imposter = {
           if (ctx.state.order[idx] !== playerId) return; // not your turn
           const text = String(payload.text || '').trim().slice(0, 30);
           if (!text) return;
-          ctx.state.clues.push({ playerId, text });
+          ctx.state.clues.push({ playerId, text, round: ctx.state.currentRound || 1 });
           ctx.state.currentClueGiver += 1;
+          if (ctx.state.currentClueGiver >= ctx.state.order.length && (ctx.state.currentRound || 1) < (ctx.state.rounds || 1)) {
+            ctx.state.currentRound += 1;
+            ctx.state.currentClueGiver = 0;
+          }
         },
         'to-vote'(ctx, playerId) {
           if (!ctx.me.isHost) return;

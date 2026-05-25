@@ -10,6 +10,7 @@ The first included game is **Imposter Who?**: every player joins from their own 
 - Server-authoritative game state and private per-player views
 - Rejoin support after refresh via session storage
 - Host-controlled lobby settings and round start
+- Configurable clue rounds before voting, defaulting to 2 and capped at 3
 - Mobile-friendly Nocturne-style dark technical UI
 - Health endpoint at `/health`
 - Automated unit tests plus a full multi-client smoke test

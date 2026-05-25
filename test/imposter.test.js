@@ -47,3 +47,43 @@ test('keeps private role views private per player', () => {
   assert.equal(card.value, 'IMPOSTER');
   assert.equal(card.description.includes(state.secret), false);
 });
+
+test('defaults to two clue rounds and clamps configured rounds to three', () => {
+  assert.equal(Imposter.setup(baseCtx()).rounds, 2);
+  assert.equal(
+    Imposter.setup(baseCtx({ config: { category: 'food', imposters: 1, rounds: 99 } })).rounds,
+    3
+  );
+});
+
+test('requires all players to clue twice by default before vote can start', () => {
+  const players = baseCtx().players;
+  const state = Imposter.setup(baseCtx());
+  const host = { id: players[0].id, name: players[0].name, isHost: true };
+  let phaseId = 'clues';
+  const ctx = {
+    state,
+    players,
+    me: host,
+    goTo(id) { phaseId = id; },
+  };
+
+  for (const playerId of state.order) {
+    Imposter.phases.clues.actions['submit-clue'](ctx, playerId, { text: `round1-${playerId}` });
+  }
+
+  assert.equal(state.currentRound, 2);
+  assert.equal(state.currentClueGiver, 0);
+  assert.equal(phaseId, 'clues');
+
+  let hostView = Imposter.phases.clues.getView(ctx);
+  assert.equal(hostView.some((section) => section.actionId === 'to-vote'), false);
+
+  for (const playerId of state.order) {
+    Imposter.phases.clues.actions['submit-clue'](ctx, playerId, { text: `round2-${playerId}` });
+  }
+
+  hostView = Imposter.phases.clues.getView(ctx);
+  assert.equal(hostView.some((section) => section.actionId === 'to-vote'), true);
+  assert.equal(state.clues.length, players.length * 2);
+});
