@@ -1,0 +1,19 @@
+{
+  "name": "vdev101-multiplayer-platform",
+  "version": "1.0.0",
+  "description": "Nocturne-styled real-time multiplayer party game platform built from vDev101/003-multiplayer",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node --test",
+    "smoke": "PORT=8765 node smoke.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "ws": "^8.18.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
