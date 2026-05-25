@@ -21,6 +21,18 @@
  */
 const WORD_CATEGORIES = require('./words');
 
+function resolveVote(state) {
+  const tally = {};
+  Object.values(state.votes).forEach((targetId) => {
+    tally[targetId] = (tally[targetId] || 0) + 1;
+  });
+  const max = Math.max(...Object.values(tally), 0);
+  const accused = Object.keys(tally).filter((id) => tally[id] === max);
+  const tied = accused.length > 1;
+  const caught = !tied && state.imposterIds.includes(accused[0]);
+  state.result = { tally, accused, tied, caught };
+}
+
 const Imposter = {
   id: 'imposter',
   name: 'Imposter Who?',
@@ -264,8 +276,8 @@ const Imposter = {
             },
           ];
           if (cluesItems.length) sections.push({ type: 'list', items: cluesItems });
-          if (me.isHost && totalVotes >= total) {
-            sections.push({ type: 'action', actionId: 'tally', label: 'Reveal results →' });
+          if (totalVotes >= total) {
+            sections.push({ type: 'progress', text: 'All votes in. Resolving…' });
           }
           return sections;
         }
@@ -287,19 +299,17 @@ const Imposter = {
         'cast-vote'(ctx, playerId, payload) {
           if (!payload || !payload.value) return;
           if (payload.value === playerId) return; // can't vote yourself
+          if (!ctx.players.some((p) => p.id === payload.value)) return;
           ctx.state.votes[playerId] = payload.value;
+          if (Object.keys(ctx.state.votes).length >= ctx.players.length) {
+            resolveVote(ctx.state);
+            ctx.goTo('results');
+          }
         },
         tally(ctx) {
           if (!ctx.me.isHost) return;
-          const tally = {};
-          Object.values(ctx.state.votes).forEach((t) => {
-            tally[t] = (tally[t] || 0) + 1;
-          });
-          const max = Math.max(...Object.values(tally), 0);
-          const accused = Object.keys(tally).filter((k) => tally[k] === max);
-          const tied = accused.length > 1;
-          const caught = !tied && ctx.state.imposterIds.includes(accused[0]);
-          ctx.state.result = { tally, accused, tied, caught };
+          if (Object.keys(ctx.state.votes).length < ctx.players.length) return;
+          resolveVote(ctx.state);
           ctx.goTo('results');
         },
       },

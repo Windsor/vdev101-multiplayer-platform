@@ -25,6 +25,11 @@
       .replace(/'/g, '&#39;');
   }
 
+  function smsInviteHref(code) {
+    const message = `Join my Imposter Who? room. Room code: ${code}. Open ${location.href}`;
+    return `sms:?&body=${encodeURIComponent(message)}`;
+  }
+
   function setStatus(text, kind) {
     if (!text) {
       statusEl.classList.add('hidden');
@@ -243,6 +248,8 @@
       })
       .join('');
 
+    const smsHref = smsInviteHref(view.code);
+
     app.innerHTML = `
       <header class="header">
         <button class="link back" data-action="leave">← leave</button>
@@ -253,6 +260,8 @@
           <p class="muted small">Room code</p>
           <p class="room-code">${esc(view.code)}</p>
           <p class="muted small">Players join from their own device with this code.</p>
+          <a class="primary big sms-invite" href="${esc(smsHref)}">SMS ping invite</a>
+          <p class="muted small invite-copy">Sends this room code and the current URL.</p>
         </section>
         <section class="card">
           <h3>Players (${view.players.length}/${view.game.maxPlayers})</h3>

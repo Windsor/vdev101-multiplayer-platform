@@ -18,6 +18,15 @@ function baseCtx(overrides = {}) {
   };
 }
 
+function playerCtx({ state, players = baseCtx().players, me = players[0], phaseIdRef }) {
+  return {
+    state,
+    players,
+    me: { id: me.id, name: me.name, isHost: me.isHost ?? false },
+    goTo(id) { phaseIdRef.value = id; },
+  };
+}
+
 test('sets up one imposter, one shared secret, and a turn order', () => {
   const state = Imposter.setup(baseCtx());
 
@@ -86,4 +95,57 @@ test('requires all players to clue twice by default before vote can start', () =
   hostView = Imposter.phases.clues.getView(ctx);
   assert.equal(hostView.some((section) => section.actionId === 'to-vote'), true);
   assert.equal(state.clues.length, players.length * 2);
+});
+
+test('automatically resolves to results after every player votes', () => {
+  const players = baseCtx().players.slice(0, 3);
+  const state = {
+    ...Imposter.setup(baseCtx({ players, config: { category: 'food', imposters: 1, rounds: 1 } })),
+    votes: {},
+  };
+  const phaseIdRef = { value: 'vote' };
+
+  Imposter.phases.vote.actions['cast-vote'](
+    playerCtx({ state, players, me: players[0], phaseIdRef }),
+    players[0].id,
+    { value: players[1].id }
+  );
+  assert.equal(phaseIdRef.value, 'vote');
+  assert.equal(state.result, null);
+
+  Imposter.phases.vote.actions['cast-vote'](
+    playerCtx({ state, players, me: players[1], phaseIdRef }),
+    players[1].id,
+    { value: players[0].id }
+  );
+  assert.equal(phaseIdRef.value, 'vote');
+  assert.equal(state.result, null);
+
+  Imposter.phases.vote.actions['cast-vote'](
+    playerCtx({ state, players, me: players[2], phaseIdRef }),
+    players[2].id,
+    { value: players[1].id }
+  );
+
+  assert.equal(phaseIdRef.value, 'results');
+  assert.deepEqual(state.result.tally, { [players[1].id]: 2, [players[0].id]: 1 });
+  assert.deepEqual(state.result.accused, [players[1].id]);
+});
+
+test('ignores votes for non-players so invalid ballots cannot resolve the game', () => {
+  const players = baseCtx().players.slice(0, 3);
+  const state = {
+    ...Imposter.setup(baseCtx({ players, config: { category: 'food', imposters: 1, rounds: 1 } })),
+    votes: {},
+  };
+  const phaseIdRef = { value: 'vote' };
+
+  Imposter.phases.vote.actions['cast-vote'](
+    playerCtx({ state, players, me: players[0], phaseIdRef }),
+    players[0].id,
+    { value: 'not-a-player' }
+  );
+
+  assert.deepEqual(state.votes, {});
+  assert.equal(phaseIdRef.value, 'vote');
 });

@@ -165,6 +165,8 @@ button { cursor: pointer; }
   font-size: 12px;
   letter-spacing: .05em;
   text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -183,6 +185,8 @@ button { cursor: pointer; }
 
 /* ---------- Lobby ---------- */
 .code-card { text-align: center; }
+.sms-invite { margin: 16px auto 0; max-width: 320px; }
+.invite-copy { margin-top: 8px; }
 .room-code {
   font-family: 'Geist Mono', monospace;
   font-size: clamp(56px, 10vw, 112px);

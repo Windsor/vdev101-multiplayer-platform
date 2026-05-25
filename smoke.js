@@ -128,12 +128,7 @@ async function main() {
   send(a, { type: 'action', actionId: 'cast-vote', payload: { value: b.state.playerId } });
   send(b, { type: 'action', actionId: 'cast-vote', payload: { value: a.state.playerId } });
   send(c, { type: 'action', actionId: 'cast-vote', payload: { value: b.state.playerId } });
-  await waitFor(a, (v) => {
-    return (v.sections || []).some((s) => s.type === 'action' && s.actionId === 'tally');
-  }, 'tally button appears for host');
-
-  console.log('\n— Host tallies —');
-  send(a, { type: 'action', actionId: 'tally' });
+  console.log('\n— Final vote auto-resolves —');
   await waitFor(a, (v) => v.phaseId === 'results', 'results phase reached');
   await waitFor(b, (v) => v.phaseId === 'results', 'Bob sees results');
   await waitFor(c, (v) => v.phaseId === 'results', 'Carol sees results');
